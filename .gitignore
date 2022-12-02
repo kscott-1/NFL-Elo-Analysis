@@ -1,0 +1,21 @@
+# Ignore all
+*
+
+# Unignore csv files
+!*.csv
+
+# Unignore julia files
+!*.jl
+
+# Unignore jupyter notebook files
+!*.ipynb
+
+# Unignore markdown files
+!*.md
+
+# Unignore project files
+!Project.toml
+!Manifest.toml
+
+# Unignore .gitignore
+!.gitignore
