@@ -13,11 +13,14 @@
 # Unignore markdown files
 !*.md
 
+# Unignore html files
+!*.html
+
 # Unignore project files
 !Project.toml
 !Manifest.toml
 
-#Unignore Directories
+# Unignore Directories
 !**/
 
 # Unignore .gitignore
