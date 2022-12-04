@@ -283,6 +283,11 @@ Beginning with simple insights, this model does tell us something. Judging by th
 Despite these insights, this model will not be useful for any sort of score prediction. Looking at the graphic, we can immediately see the extreme variability in this scatterplot. While there is presence of a trend, there are simply too many factors that go into which team wins an NFL game to find use out of a linear, one predictor model. This is further backed up by the low R^2 value of roughly .03 - this tells us mathematically that our data is too variable for the model.
 """
 
+# ╔═╡ 6f9e1d3e-ffb9-4241-ab99-cc9175a85a3b
+md"""
+Test
+"""
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -1825,5 +1830,6 @@ version = "1.4.1+0"
 # ╟─c439a599-cf45-4691-9020-34962ffa6b4f
 # ╟─0cfce2c0-1107-4176-a50d-2943141374c4
 # ╟─fd3d5046-3b7f-4d69-9eaf-867fa2ced3c4
+# ╟─6f9e1d3e-ffb9-4241-ab99-cc9175a85a3b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
