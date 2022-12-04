@@ -16,7 +16,9 @@ end
 
 # ╔═╡ 18ff7946-d48a-4431-bfb5-2fc039bdabe4
 begin
-	using Plots, PlutoUI, DataFrames, CSV, PlotThemes, Queryverse, StatsBase, StatsPlots
+	using Plots, PlotlyBase, PlotlyKaleido, StatsBase, PlutoUI, DataFrames, CSV, Queryverse, GLM
+
+	plotly()
 
 	md"""
 	# Team 4 - 2022 NFL Game Data
@@ -105,12 +107,8 @@ begin
 	start = [x;][1];
 	
 	finish = last([x;]);
-
-	plotly()
 	
-	theme(:default)
-	
-	team_select_elo |> @filter(_.game_num ∈ x) |> DataFrame |> a -> bar(a.game_num, a.importance, series_annotations = text.(a.opp_team, :bottom, :9), legend = false, xticks = ([1:1:17;]), xlims = [start - 1, finish + 1], yticks = ([0:10:100;]), ylims = [0,100], xlabel = "Game Number", ylabel = "Game Importance", title = "Overall Game Importance for $team By Week", color = :grey)
+	team_select_elo |> @filter(_.game_num ∈ x) |> DataFrame |> a -> Plots.bar(a.game_num, a.importance, series_annotations = text.(a.opp_team, :bottom, :9), legend = false, xticks = ([1:1:17;]), xlims = [start - 1, finish + 1], yticks = ([0:10:100;]), ylims = [0,105], xlabel = "Game Number", ylabel = "Game Importance", title = "Overall Game Importance for $team By Week", color = :grey)
 end
 
 # ╔═╡ f9c80827-34ee-4893-9580-d23900acfa74
@@ -178,23 +176,19 @@ print("FiveThirtyEight Elo Prediction Accuracy for 2022: ", round(collect(values
 
 # ╔═╡ 149a4880-5c77-48c0-ac87-78481ef5bfca
 md"""
-We can see that the current accuracy for 2022 hits nearly 60%. While a higher number than 50%, is this actually a good result? To answer this question, let's first look at a graphic of these results and then discuss how this compares to Vegas predictions.
+We can see that the current accuracy for 2022 hits nearly 60%. While a higher number than 50%, is this actually a good result? To answer this question, let's first look at a graphic of these results for insights.
 """
 
 # ╔═╡ 84bae930-6e12-4e1d-932b-e9fc9b8b4f69
 
 
 # ╔═╡ 1826c6cc-38ae-4478-bb88-8d92ca68ddc0
-begin
-	theme(:default)
-	
-	#p1 = scatter(elo_diff, score_diff, group = col_rightwrong, xlab = "Positive Difference in Elo", ylab = "Actual Point Spread",  color_palette = [:green, :red], legendfontsize = 7, legend = :outertop)
-
-	histogram(elo_diff, bins = 16, group = col_rightwrong, title = "At What Elo Difference are Predictions More Accurate?", xlab = "Positive Difference in Elo in Each Game", ylab = "Occurances in 2022",  color_palette = [:green, :red], legendfontsize = 7, titlefontsize = 12, xguidefontsize = 10, yguidefontsize = 10, legend = :right, alpha = 0.5)
-end
+Plots.histogram(elo_diff, bins = 16, group = col_rightwrong, title = "At What Elo Difference are Predictions More Accurate?", xlab = "Positive Difference in Elo in Each Game", ylab = "Occurances in 2022",  color_palette = [:green, :red], legendfontsize = 7, titlefontsize = 12, xguidefontsize = 10, yguidefontsize = 10, legend = :right, alpha = 0.5)
 
 # ╔═╡ f1891596-2628-4ab6-92a1-374f56259123
 md"""
+Now that we have our plot, is there any obvious break to be found here? It appears so.
+
 Thusfar in 2022, it seems that if the Elo difference is greater than 40, the rate at which the Higher Elo team actually wins increases. At lower Elo difference levels, the prediction given by Elo is significantly less accurate. In fact, with a difference of 40 Elo or less, the Lower Elo team wins the game more often than not.
 
 This isn't incredibly surprising - This confirms the logical notion more lopsided matchups are less likely to produce an unexpected outcome.
@@ -214,54 +208,104 @@ gt_count = countmap(gt_40.col_rightwrong)
 # ╔═╡ be40ac7f-9265-42ba-9f1b-a0d45f367ec3
 print("Prediction Accuracy (Elo Diff > 40): ", round(collect(values(gt_count))[2]/length(gt_40.col_rightwrong)*100, digits = 3), "%")
 
-# ╔═╡ 72ef1d19-4fe5-4516-8feb-e5063310adef
-spread = -1 * (completed_games_elo.elo1_pre - completed_games_elo.elo2_pre) / 25
+# ╔═╡ 30e56e37-6236-4c7d-9644-75917394f6c5
+md"""
+While not drastically different, this provided us a roughly 10% increase in accuracy.
 
-# ╔═╡ 0ef5b9da-f389-4403-81cf-75c6ca51ecb5
-score = completed_games_elo.score1 - completed_games_elo.score2
+In summation, we have built the framework to claim that Elo can be an important predictive tool. Specifically that in games with a large Elo Difference, the prediction is more likely to be correct.
+"""
 
-# ╔═╡ 9b8dc026-3332-4863-a7db-f27832cde75f
-completed_games_elo.ats = abs.(spread + score)
+# ╔═╡ 86bbeb29-3391-40a1-bb94-e0d7fed2d102
 
-# ╔═╡ 46fbc3e7-045d-4920-8ab1-30099a550ec2
-completed_games_elo.winner = col_rightwrong
 
-# ╔═╡ 8691f908-9c29-4739-8989-3ea57a1af84a
-p1 = boxplot(completed_games_elo.ats, color = :purple);
+# ╔═╡ 86c47087-4beb-47a7-9c4f-c0cd3d718766
+md"""
+### Simple Model to Show the Impact of Elo Difference
+"""
 
-# ╔═╡ cb2bcc3a-a639-49ac-8005-95825e39730c
-p2 = boxplot(abs.(score), color = :pink);
+# ╔═╡ 074c17b9-f29e-429e-9913-552a8fb477c0
+md"""
+We have now shown that in general, predictions seem to be more accurate as the difference in Elo between two teams playing in a game increases. Is there any further mathematical backing to this claim that can be shown with a simple model?
+"""
 
-# ╔═╡ a1e8975d-fcc4-4d98-b115-bde67bb2fee6
-plot(p1, p2)
+# ╔═╡ ab966671-0705-4f9b-a34b-6cab93556ffb
+lr_df = DataFrame(y = score_diff, x = elo_diff);
 
-# ╔═╡ 473b010b-5aab-415a-af79-b922781dc44d
+# ╔═╡ 9deed019-0fb0-4578-92a7-b764f04c14d8
+md"""
+##### Create the Model
+"""
+
+# ╔═╡ a6acc375-9bf7-41d5-979b-178c2a4c9c6c
+md"""
+Here we will develop an _extremely_ simple linear model using the Elo Difference prior to the game as a predictor of the score spread.
+
+- Elo Difference: The positive difference between Elo of each team. (i.e. team1 = 1400 Elo, team2 = 1550 Elo => elo_diff = 150)
+
+- Score Difference: The difference in score between the Higher Elo team and the Lower Elo team (i.e. Higher Elo Score = 13, Lower Elo Score = 20 => score_diff = -7)
+"""
+
+# ╔═╡ 73a3f82c-badc-4647-bc2a-cf3ef776c939
+md"""
+**Model:**
+"""
+
+# ╔═╡ 1e35bfde-7ea2-4136-9f68-33122ee9b161
+scorediff_model = lm(@formula(y ~ x), lr_df)
+
+# ╔═╡ 8e71f4cb-64eb-4b5f-8f63-ef61fb46386a
+md"""
+**R^2 Value:**
+"""
+
+# ╔═╡ b41e8471-ba0c-407e-af57-efe22dda635f
+r2(scorediff_model)
+
+# ╔═╡ d3dc0b7a-c3b8-481d-849e-d27b212aff99
+
+
+# ╔═╡ c439a599-cf45-4691-9020-34962ffa6b4f
 begin
-	@df completed_games_elo violin(:winner, :ats, linewidth=0)
-	@df completed_games_elo boxplot!(:winner, :ats, fillalpha=0.75, linewidth=2)
+	Plots.scatter(elo_diff, score_diff, group = col_rightwrong, xlab = "Positive Difference in Elo", ylab = "Actual Point Spread", title = "Impact of Elo Difference on Actual Game Results", color_palette = [:green, :red], legendfontsize = 7, legend = :outerright)
+	
+	plot!(elo_diff, predict(scorediff_model, DataFrame(x = elo_diff)), color = :black, linewidth = 4, legend = false)
 end
+
+# ╔═╡ 0cfce2c0-1107-4176-a50d-2943141374c4
+
+
+# ╔═╡ fd3d5046-3b7f-4d69-9eaf-867fa2ced3c4
+md"""
+Let's discuss. Does this model tell us anything at all? Is this model useful for predictions?
+
+Beginning with simple insights, this model does tell us something. Judging by the results table produced by our model, the x term (Elo Difference) has a significance level of 0.0204. Using an alpha level of 0.05, this term is significant - meaning there _is_ a relationship between the predictor and the outcome. In the context of our model, this means that there is a presence of a positive relationship between Elo Difference and Score Difference (i.e. as Elo Difference increases, Score Difference increases as well).
+
+Despite these insights, this model will not be useful for any sort of score prediction. Looking at the graphic, we can immediately see the extreme variability in this scatterplot. While there is presence of a trend, there are simply too many factors that go into which team wins an NFL game to find use out of a linear, one predictor model. This is further backed up by the low R^2 value of roughly .03 - this tells us mathematically that our data is too variable for the model.
+"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-PlotThemes = "ccf2f8ad-2431-5c83-bf29-c5338b663b6a"
+GLM = "38e38edf-8417-5370-95a0-9cbb8c7f171a"
+PlotlyBase = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
+PlotlyKaleido = "f2990250-8cf9-495f-b13a-cce12b45703c"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Queryverse = "612083be-0b0f-5412-89c1-4e7c75506a58"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 
 [compat]
 CSV = "~0.10.7"
 DataFrames = "~1.4.3"
-PlotThemes = "~3.1.0"
-Plots = "~1.36.2"
+GLM = "~1.8.1"
+PlotlyBase = "~0.8.19"
+PlotlyKaleido = "~1.0.0"
+Plots = "~1.36.6"
 PlutoUI = "~0.7.48"
 Queryverse = "~0.7.0"
 StatsBase = "~0.33.21"
-StatsPlots = "~0.15.4"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -270,13 +314,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.3"
 manifest_format = "2.0"
-project_hash = "dec9137e7690ddb5482617315eabfe39a72dd2a0"
-
-[[deps.AbstractFFTs]]
-deps = ["ChainRulesCore", "LinearAlgebra"]
-git-tree-sha1 = "69f7020bd72f069c219b5e8c236c1fa90d2cb409"
-uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
-version = "1.2.1"
+project_hash = "2775b8b6d29f65a29e281c73c46240bf5f2fc89b"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -284,27 +322,9 @@ git-tree-sha1 = "8eaf9f1b4921132a4cff3f36a1d9ba923b14a481"
 uuid = "6e696c72-6542-2067-7265-42206c756150"
 version = "1.1.4"
 
-[[deps.Adapt]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "195c5505521008abea5aee4f96930717958eac6f"
-uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "3.4.0"
-
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 version = "1.1.1"
-
-[[deps.Arpack]]
-deps = ["Arpack_jll", "Libdl", "LinearAlgebra", "Logging"]
-git-tree-sha1 = "9b9b347613394885fd1c8c7729bfc60528faa436"
-uuid = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
-version = "0.5.4"
-
-[[deps.Arpack_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "OpenBLAS_jll", "Pkg"]
-git-tree-sha1 = "5ba6c757e8feccf03a1554dfaf3e26b3cfc7fd5e"
-uuid = "68821587-b530-5797-8361-c406ea357684"
-version = "3.5.1+1"
 
 [[deps.Arrow]]
 deps = ["CategoricalArrays", "Dates"]
@@ -314,12 +334,6 @@ version = "0.2.4"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
-
-[[deps.AxisAlgorithms]]
-deps = ["LinearAlgebra", "Random", "SparseArrays", "WoodburyMatrices"]
-git-tree-sha1 = "66771c8d21c8ff5e3a93379480a2307ac36863f7"
-uuid = "13072b0f-2c55-5437-9ae7-d433b7a33950"
-version = "1.0.1"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -382,12 +396,6 @@ deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
 git-tree-sha1 = "38f7a08f19d8810338d4f5085211c7dfa5d5bdd8"
 uuid = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
 version = "0.1.4"
-
-[[deps.Clustering]]
-deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "Random", "SparseArrays", "Statistics", "StatsBase"]
-git-tree-sha1 = "64df3da1d2a26f4de23871cd1b6482bb68092bd5"
-uuid = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
-version = "0.14.3"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -512,12 +520,6 @@ git-tree-sha1 = "80c3e8639e3353e5d2912fb3a1916b8455e2494b"
 uuid = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
 version = "0.4.0"
 
-[[deps.Distances]]
-deps = ["LinearAlgebra", "SparseArrays", "Statistics", "StatsAPI"]
-git-tree-sha1 = "3258d0659f812acde79e8a74b11f17ac06d0ca04"
-uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
-version = "0.10.7"
-
 [[deps.Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
@@ -592,18 +594,6 @@ deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "JLLWrappers",
 git-tree-sha1 = "74faea50c1d007c85837327f6775bea60b5492dd"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "4.4.2+2"
-
-[[deps.FFTW]]
-deps = ["AbstractFFTs", "FFTW_jll", "LinearAlgebra", "MKL_jll", "Preferences", "Reexport"]
-git-tree-sha1 = "90630efff0894f8142308e334473eba54c433549"
-uuid = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
-version = "1.5.0"
-
-[[deps.FFTW_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "c6033cc3892d0ef5bb9cd29b7f2f0331ea5184ea"
-uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
-version = "3.3.10+0"
 
 [[deps.FeatherFiles]]
 deps = ["Arrow", "DataValues", "FeatherLib", "FileIO", "IterableTables", "IteratorInterfaceExtensions", "TableShowUtils", "TableTraits", "TableTraitsUtils", "Test"]
@@ -690,17 +680,23 @@ git-tree-sha1 = "d972031d28c8c8d9d7b41a536ad7bb0c2579caca"
 uuid = "0656b61e-2033-5cc2-a64a-77c0f6c09b89"
 version = "3.3.8+0"
 
+[[deps.GLM]]
+deps = ["Distributions", "LinearAlgebra", "Printf", "Reexport", "SparseArrays", "SpecialFunctions", "Statistics", "StatsAPI", "StatsBase", "StatsFuns", "StatsModels"]
+git-tree-sha1 = "884477b9886a52a84378275737e2823a5c98e349"
+uuid = "38e38edf-8417-5370-95a0-9cbb8c7f171a"
+version = "1.8.1"
+
 [[deps.GR]]
-deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Preferences", "Printf", "Random", "Serialization", "Sockets", "Test", "UUIDs"]
-git-tree-sha1 = "00a9d4abadc05b9476e937a5557fcce476b9e547"
+deps = ["Artifacts", "Base64", "DelimitedFiles", "Downloads", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Preferences", "Printf", "Random", "Serialization", "Sockets", "TOML", "Tar", "Test", "UUIDs", "p7zip_jll"]
+git-tree-sha1 = "051072ff2accc6e0e87b708ddee39b18aa04a0bc"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.69.5"
+version = "0.71.1"
 
 [[deps.GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Pkg", "Qt5Base_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "bc9f7725571ddb4ab2c4bc74fa397c1c5ad08943"
+git-tree-sha1 = "501a4bf76fd679e7fcd678725d5072177392e756"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
-version = "0.69.1+0"
+version = "0.71.1+0"
 
 [[deps.GenericLinearAlgebra]]
 deps = ["LinearAlgebra", "Printf", "Random", "libblastrampoline_jll"]
@@ -778,21 +774,9 @@ git-tree-sha1 = "0cf92ec945125946352f3d46c96976ab972bde6f"
 uuid = "842dd82b-1e85-43dc-bf29-5d0ee9dffc48"
 version = "1.3.2"
 
-[[deps.IntelOpenMP_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "d979e54b71da82f3a65b62553da4fc3d18c9004c"
-uuid = "1d5cc7b8-4909-519e-a0f8-d0f5ad9712d0"
-version = "2018.0.3+2"
-
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
-
-[[deps.Interpolations]]
-deps = ["Adapt", "AxisAlgorithms", "ChainRulesCore", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "Requires", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
-git-tree-sha1 = "842dd89a6cb75e02e85fdd75c760cdc43f5d6863"
-uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
-version = "0.14.6"
 
 [[deps.InverseFunctions]]
 deps = ["Test"]
@@ -851,11 +835,11 @@ git-tree-sha1 = "b53380851c6e6664204efb2e62cd24fa5c47e4ba"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
 version = "2.1.2+0"
 
-[[deps.KernelDensity]]
-deps = ["Distributions", "DocStringExtensions", "FFTW", "Interpolations", "StatsBase"]
-git-tree-sha1 = "9816b296736292a80b9a3200eb7fbb57aaa3917a"
-uuid = "5ab0869b-81aa-558d-bb23-cbf5423bbe9b"
-version = "0.6.5"
+[[deps.Kaleido_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "43032da5832754f58d14a91ffbe86d5f176acda9"
+uuid = "f7e6163d-2fa5-5f23-b69c-1db539e41963"
+version = "0.2.1+0"
 
 [[deps.LAME_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -885,10 +869,6 @@ deps = ["Formatting", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdow
 git-tree-sha1 = "ab9aa169d2160129beb241cb2750ca499b4e90e9"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
 version = "0.15.17"
-
-[[deps.LazyArtifacts]]
-deps = ["Artifacts", "Pkg"]
-uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
 
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -978,12 +958,6 @@ git-tree-sha1 = "65f28ad4b594aebe22157d6fac869786a255b7eb"
 uuid = "6c6e2e6c-3030-632d-7369-2d6c69616d65"
 version = "0.1.4"
 
-[[deps.MKL_jll]]
-deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
-git-tree-sha1 = "2ce8695e1e699b68702c03402672a69f54b8aca9"
-uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
-version = "2022.2.0+0"
-
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
 git-tree-sha1 = "42324d08725e200c23d4dfb549e0d5d89dede2d2"
@@ -1029,23 +1003,11 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 version = "2022.2.1"
 
-[[deps.MultivariateStats]]
-deps = ["Arpack", "LinearAlgebra", "SparseArrays", "Statistics", "StatsAPI", "StatsBase"]
-git-tree-sha1 = "efe9c8ecab7a6311d4b91568bd6c88897822fabe"
-uuid = "6f286f6a-111f-5878-ab1e-185364afe411"
-version = "0.10.0"
-
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
 git-tree-sha1 = "a7c3d1da1189a1c2fe843a3bfa04d18d20eb3211"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
 version = "1.0.1"
-
-[[deps.NearestNeighbors]]
-deps = ["Distances", "StaticArrays"]
-git-tree-sha1 = "440165bf08bc500b8fe4a7be2dc83271a00c0716"
-uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
-version = "0.4.12"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
@@ -1061,17 +1023,6 @@ version = "1.3.0"
 git-tree-sha1 = "8f87854cc8f3685a60689d8edecaa29d2251979b"
 uuid = "4d1e1d77-625e-5b40-9113-a560ec7a8ecd"
 version = "1.0.0"
-
-[[deps.Observables]]
-git-tree-sha1 = "6862738f9796b3edc1c09d0890afce4eca9e7e93"
-uuid = "510215fc-4207-5dde-b226-833fc4488ee2"
-version = "0.5.4"
-
-[[deps.OffsetArrays]]
-deps = ["Adapt"]
-git-tree-sha1 = "f71d8950b724e9ff6110fc948dff5a329f901d64"
-uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
-version = "1.12.8"
 
 [[deps.Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1175,11 +1126,23 @@ git-tree-sha1 = "21303256d239f6b484977314674aef4bb1fe4420"
 uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
 version = "1.3.1"
 
+[[deps.PlotlyBase]]
+deps = ["ColorSchemes", "Dates", "DelimitedFiles", "DocStringExtensions", "JSON", "LaTeXStrings", "Logging", "Parameters", "Pkg", "REPL", "Requires", "Statistics", "UUIDs"]
+git-tree-sha1 = "56baf69781fc5e61607c3e46227ab17f7040ffa2"
+uuid = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
+version = "0.8.19"
+
+[[deps.PlotlyKaleido]]
+deps = ["Base64", "JSON", "Kaleido_jll"]
+git-tree-sha1 = "64b125713e6ec1b5fac6ae1f9624b8b408ec9cb8"
+uuid = "f2990250-8cf9-495f-b13a-cce12b45703c"
+version = "1.0.0"
+
 [[deps.Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SnoopPrecompile", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
-git-tree-sha1 = "5955a002262c08ab155ed2a6f1bb0787fedf5939"
+git-tree-sha1 = "6a9521b955b816aa500462951aa67f3e4467248a"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.36.2"
+version = "1.36.6"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
@@ -1270,12 +1233,6 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 deps = ["SHA", "Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
-[[deps.Ratios]]
-deps = ["Requires"]
-git-tree-sha1 = "dc84268fe0e3335a62e315a3a7cf2afa7178a734"
-uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
-version = "0.4.3"
-
 [[deps.ReadOnlyArrays]]
 deps = ["SparseArrays", "Test"]
 git-tree-sha1 = "65f17072a35c2be7ac8941aeeae489013212e71f"
@@ -1360,9 +1317,10 @@ git-tree-sha1 = "e2cc6d8c88613c05e1defb55170bf5ff211fbeac"
 uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 version = "1.1.1"
 
-[[deps.SharedArrays]]
-deps = ["Distributed", "Mmap", "Random", "Serialization"]
-uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+[[deps.ShiftedArrays]]
+git-tree-sha1 = "503688b59397b3307443af35cd953a13e8005c16"
+uuid = "1277b4bf-5013-50f5-be3d-901d8477a67a"
+version = "2.0.0"
 
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
@@ -1406,12 +1364,6 @@ git-tree-sha1 = "28466ea10caec61c476a262172319d2edf248187"
 uuid = "1463e38c-9381-5320-bcd4-4134955f093a"
 version = "0.8.0"
 
-[[deps.StaticArrays]]
-deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
-git-tree-sha1 = "ffc098086f35909741f71ce21d03dadf0d2bfa76"
-uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.5.11"
-
 [[deps.StaticArraysCore]]
 git-tree-sha1 = "6b7ba252635a5eff6a0b0664a41ee140a1c9e72a"
 uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
@@ -1439,11 +1391,11 @@ git-tree-sha1 = "89a3bfe98f5400f4ff58bb5cd1a9e46f95d08352"
 uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 version = "1.1.0"
 
-[[deps.StatsPlots]]
-deps = ["AbstractFFTs", "Clustering", "DataStructures", "DataValues", "Distributions", "Interpolations", "KernelDensity", "LinearAlgebra", "MultivariateStats", "NaNMath", "Observables", "Plots", "RecipesBase", "RecipesPipeline", "Reexport", "StatsBase", "TableOperations", "Tables", "Widgets"]
-git-tree-sha1 = "e0d5bc26226ab1b7648278169858adcfbd861780"
-uuid = "f3b207a7-027a-5e70-b257-86293d7955fd"
-version = "0.15.4"
+[[deps.StatsModels]]
+deps = ["DataAPI", "DataStructures", "LinearAlgebra", "Printf", "REPL", "ShiftedArrays", "SparseArrays", "StatsBase", "StatsFuns", "Tables"]
+git-tree-sha1 = "a5e15f27abd2692ccb61a99e0854dfb7d48017db"
+uuid = "3eaba693-59b7-5ba5-a881-562e759f1c8d"
+version = "0.6.33"
 
 [[deps.StringManipulation]]
 git-tree-sha1 = "46da2434b41f41ac3594ee9816ce5541c6096123"
@@ -1464,12 +1416,6 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.0"
-
-[[deps.TableOperations]]
-deps = ["SentinelArrays", "Tables", "Test"]
-git-tree-sha1 = "e383c87cf2a1dc41fa30c093b2a19877c83e1bc1"
-uuid = "ab02a1b2-a7df-11e8-156e-fb1833f50b87"
-version = "1.2.0"
 
 [[deps.TableShowUtils]]
 deps = ["DataValues", "Dates", "JSON", "Markdown", "Test"]
@@ -1601,18 +1547,6 @@ deps = ["DataAPI", "InlineStrings", "Parsers"]
 git-tree-sha1 = "b1be2855ed9ed8eac54e5caff2afcdb442d52c23"
 uuid = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
 version = "1.4.2"
-
-[[deps.Widgets]]
-deps = ["Colors", "Dates", "Observables", "OrderedCollections"]
-git-tree-sha1 = "fcdae142c1cfc7d89de2d11e08721d0f2f86c98a"
-uuid = "cc8bc4a8-27d6-5769-a93b-9d913e69aa62"
-version = "0.6.6"
-
-[[deps.WoodburyMatrices]]
-deps = ["LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "de67fa59e33ad156a590055375a30b23c40299d3"
-uuid = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
-version = "0.5.5"
 
 [[deps.XLSX]]
 deps = ["Dates", "EzXML", "Printf", "Tables", "ZipFile"]
@@ -1860,7 +1794,7 @@ version = "1.4.1+0"
 # ╟─da25db7f-d50e-4ef7-96ea-d5aaff48eb1d
 # ╟─8908d678-2df5-4d36-90e1-f0a8da3037ea
 # ╟─204e6e56-4b8b-445f-a9fb-838eb8bde72e
-# ╠═4b2b242e-f63e-439b-b839-d97459be1130
+# ╟─4b2b242e-f63e-439b-b839-d97459be1130
 # ╟─f9c80827-34ee-4893-9580-d23900acfa74
 # ╟─456dd862-acfd-46d3-9ff0-3bff3e1854e1
 # ╟─f4e52294-843e-469b-93f3-c462a4f6fcb3
@@ -1876,13 +1810,20 @@ version = "1.4.1+0"
 # ╟─71add011-81c3-4c53-9d1d-f07107b12329
 # ╟─2356cdcc-8e21-4a32-8b17-119359a8cbfb
 # ╟─be40ac7f-9265-42ba-9f1b-a0d45f367ec3
-# ╠═72ef1d19-4fe5-4516-8feb-e5063310adef
-# ╠═0ef5b9da-f389-4403-81cf-75c6ca51ecb5
-# ╠═9b8dc026-3332-4863-a7db-f27832cde75f
-# ╠═46fbc3e7-045d-4920-8ab1-30099a550ec2
-# ╠═8691f908-9c29-4739-8989-3ea57a1af84a
-# ╠═cb2bcc3a-a639-49ac-8005-95825e39730c
-# ╠═a1e8975d-fcc4-4d98-b115-bde67bb2fee6
-# ╠═473b010b-5aab-415a-af79-b922781dc44d
+# ╟─30e56e37-6236-4c7d-9644-75917394f6c5
+# ╟─86bbeb29-3391-40a1-bb94-e0d7fed2d102
+# ╟─86c47087-4beb-47a7-9c4f-c0cd3d718766
+# ╟─074c17b9-f29e-429e-9913-552a8fb477c0
+# ╟─ab966671-0705-4f9b-a34b-6cab93556ffb
+# ╟─9deed019-0fb0-4578-92a7-b764f04c14d8
+# ╟─a6acc375-9bf7-41d5-979b-178c2a4c9c6c
+# ╟─73a3f82c-badc-4647-bc2a-cf3ef776c939
+# ╟─1e35bfde-7ea2-4136-9f68-33122ee9b161
+# ╟─8e71f4cb-64eb-4b5f-8f63-ef61fb46386a
+# ╟─b41e8471-ba0c-407e-af57-efe22dda635f
+# ╟─d3dc0b7a-c3b8-481d-849e-d27b212aff99
+# ╟─c439a599-cf45-4691-9020-34962ffa6b4f
+# ╟─0cfce2c0-1107-4176-a50d-2943141374c4
+# ╟─fd3d5046-3b7f-4d69-9eaf-867fa2ced3c4
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
