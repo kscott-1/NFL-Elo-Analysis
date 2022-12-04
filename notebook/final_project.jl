@@ -55,18 +55,15 @@ elo = CSV.File("nfl_elo_latest.csv") |> DataFrame
 
 # ╔═╡ b57bd3e8-744b-44d4-bd76-5b9574161113
 md"""
-### Interactive Features of Julia
+### Interactive Features of Julia & Data Exploration
 """
 
 # ╔═╡ e0ccc112-4200-4a12-bc87-1ea8dbfc87c6
 md"""
-As discussed previously, a piece of this project is designed specifically to explore the interactive features of Julia. Within this dataset from FiveThirtyEight, there is extensive data on elo and predictions as well as a set of columns desgined to explain how meaningful a specific game is to the NFL season. On the surface, this may seem strange, but when seen graphically, it makes a lot more sense. The columns are quality (How good are the two teams?), importance (How impactful is this game on the playoff race?) and total rating (A combination of the two).
+As discussed previously, a piece of this project is designed specifically to explore the interactive features of Julia. Within this dataset from FiveThirtyEight, there is extensive data on elo and predictions.
 
-For this section, we will focus on importance to highlight two particularly interesting features.
+To start, let's look at the Elo History for NFL teams across 2022 thusfar.
 """
-
-# ╔═╡ 85cfb5bd-1d76-42af-a444-343c7d47f3a1
-
 
 # ╔═╡ 54ed64b3-243f-460a-a291-9ca411123736
 md"""
@@ -76,40 +73,84 @@ There are 32 teams currently playing in the NFL. Use the dropdown menu below to 
 # ╔═╡ da25db7f-d50e-4ef7-96ea-d5aaff48eb1d
 @bind team Select(sort(unique(elo.team1)))
 
-# ╔═╡ 8908d678-2df5-4d36-90e1-f0a8da3037ea
+# ╔═╡ 762e5468-1648-4d53-9368-e79c7800cac9
 begin
-	tmp1 = subset(elo, :team1 => ByRow(==(team)));
-	
-	tmp_team1 = tmp1.team2;
-	
-	tmp2 = subset(elo, :team2 => ByRow(==(team)));
-	
-	tmp_team2 = tmp2.team1;
-	
-	tmp_oppteam = Array{String3}(vcat(tmp_team1, tmp_team2));
-	
-	team_select_elo = append!(tmp1, tmp2);
-	
-	team_select_elo.opp_team = tmp_oppteam;
+	function one_team_df(elo::DataFrame, team::String)::DataFrame
+		tmp1 = subset(elo, :team1 => ByRow(==(team)))
+		tmp_team1 = tmp1.team2
+		tmp2 = subset(elo, :team2 => ByRow(==(team)))
+		tmp_team2 = tmp2.team1
+		tmp_oppteam = Array{String3}(vcat(tmp_team1, tmp_team2))
+		team_select_elo = append!(tmp1, tmp2)
+		team_select_elo.opp_team = tmp_oppteam
+		team_select_elo = sort(team_select_elo)
+		team_select_elo.game_num = 1:nrow(team_select_elo)
 
-	team_select_elo = sort(team_select_elo);
-	
-	team_select_elo.game_num = 1:nrow(team_select_elo);
-	
-	md"""Use the slider below to filter Game Number:"""
+		# initialize elo vector
+		team_elo = Vector{Float64}()
+		for i in 1:nrow(team_select_elo)
+			# depending on whether team is team1 or team2, push to vector
+			if team_select_elo.team1[i] == team
+				push!(team_elo, team_select_elo.elo1_pre[i])
+			else
+				push!(team_elo, team_select_elo.elo2_pre[i])
+			end
+		end
+		# add to df
+		team_select_elo.team_elo = team_elo
+		
+		return team_select_elo
+	end;
+
+	team_select_elo = one_team_df(elo, string(team))
+end;
+
+# ╔═╡ 17062faf-a352-4de9-9e33-d201ac8cfc03
+begin
+	function elo_plot(df::DataFrame, team::InlineString)
+		Plots.plot(df.game_num, df.team_elo, xticks = ([1:1:17;]), xlims = [0, 18], linewidth = 3, label = "$team", title = "2022 Elo History for $team", xlab = "Game Number", ylab = "Elo Rating", legend = false)
+		Plots.scatter!(df.game_num, df.team_elo, label = false, color = :black, ms = 3)
+	end
+	elo_plot(team_select_elo, team)
 end
 
-# ╔═╡ 204e6e56-4b8b-445f-a9fb-838eb8bde72e
-@bind x RangeSlider(1:17)
+# ╔═╡ 6198a92b-4dbf-4d60-9000-94f741fc7f96
+
+
+# ╔═╡ 7b960ab5-c2ab-48d6-bde3-7044f5f520e8
+md"""
+Now that a team has been selected, let's take it a step further and select a second team to compare the Elo History between two teams.
+"""
+
+# ╔═╡ c1d023c8-a6bd-46dd-a62f-f64468845a74
+@bind team2 Select(sort(unique(elo.team1)))
+
+# ╔═╡ 5bb38a20-0fe9-49e1-a2e8-299a356323bd
+begin
+	team2_select_elo = one_team_df(elo, string(team2))
+
+	function elo_plot(df1::DataFrame, df2::DataFrame, team1::InlineString, team2::InlineString)
+		Plots.plot(df1.game_num, df1.team_elo, xticks = ([1:1:17;]), xlims = [0, 18], linewidth = 3, label = "$team1", title = "2022 Elo History Comparison", xlab = "Game Number", ylab = "Elo Rating", legend = :outertopright)
+		Plots.scatter!(df1.game_num, df1.team_elo, label = false, color = :black, ms = 3)
+		Plots.plot!(df2.game_num, df2.team_elo, xticks = ([1:1:17;]), xlims = [0, 18], linewidth = 3, label = "$team2", legend = :outertopright)
+		Plots.scatter!(df2.game_num, df2.team_elo, label = false, color = :black, ms = 3)
+	end
+
+	elo_plot(team_select_elo, team2_select_elo, team, team2)
+end
+
+# ╔═╡ 17eea68b-7966-4c40-8c28-c1fd9d1f55cf
+
+
+# ╔═╡ efd8b506-b761-48d5-8a10-282a3f47e97a
+md"""
+This dataset also includes information/columns on how good each game is expected to be. On the surface, this may seem strange, but when seen graphically, it makes a lot more sense. The columns are quality (How good are the two teams?), importance (How impactful is this game on the playoff race?) and total rating (A combination of the two).
+
+For this section, we will focus on importance to highlight two particularly interesting features.
+"""
 
 # ╔═╡ 4b2b242e-f63e-439b-b839-d97459be1130
-begin
-	start = [x;][1];
-	
-	finish = last([x;]);
-	
-	team_select_elo |> @filter(_.game_num ∈ x) |> DataFrame |> a -> Plots.bar(a.game_num, a.importance, series_annotations = text.(a.opp_team, :bottom, :9), legend = false, xticks = ([1:1:17;]), xlims = [start - 1, finish + 1], yticks = ([0:10:100;]), ylims = [0,105], xlabel = "Game Number", ylabel = "Game Importance", title = "Overall Game Importance for $team By Week", color = :grey)
-end
+Plots.bar(team_select_elo.game_num, team_select_elo.importance, series_annotations = text.(team_select_elo.opp_team, :bottom, :9), legend = false, xticks = ([1:1:17;]), xlims = [0, 18], yticks = ([0:10:100;]), ylims = [0,105], xlabel = "Game Number", ylabel = "Game Importance", title = "Overall Game Importance for $team By Week", color = :grey)
 
 # ╔═╡ f9c80827-34ee-4893-9580-d23900acfa74
 md"""
@@ -120,7 +161,7 @@ To the naked eye with little football knowledge, it is easy to make a few simple
 To answer this question, we need to know a little bit about NFL structure and what exactly this variable is explaining to us. For one, importance is a measure of how impactful a specific game is on the race for the playoffs. When two teams are both 5-5 and need a win to get back into the playoff hunt, that game will be extremely important. If one team is 0-10 and the other team is 10-0, that game is unlikely to have any impact, especially considering how heavily favored the 10-0 team will be. Next, the NFL currently has 7 playoff spots in each of the two conferences. 4 of those playoff spots are given to the team that wins their Division. Each Division is comprised of 4 teams, meaning there are 4 Divisions per Conference and 8 in total. What this tells us is that more often than not, games played between Divisional opponents will be the most important games! Furthermore, games played cross-conference will be of much lower importance (Teams are not competing for the same playoff spots). Is this true in the graphic?
 """
 
-# ╔═╡ 456dd862-acfd-46d3-9ff0-3bff3e1854e1
+# ╔═╡ 1f615f62-4b47-41f2-88da-90de3aca5020
 
 
 # ╔═╡ f4e52294-843e-469b-93f3-c462a4f6fcb3
@@ -210,7 +251,7 @@ print("Prediction Accuracy (Elo Diff > 40): ", round(collect(values(gt_count))[2
 
 # ╔═╡ 30e56e37-6236-4c7d-9644-75917394f6c5
 md"""
-While not drastically different, this provided us a roughly 10% increase in accuracy.
+While not drastically different, this provided us a roughly 6% increase in accuracy.
 
 In summation, we have built the framework to claim that Elo can be an important predictive tool. Specifically that in games with a large Elo Difference, the prediction is more likely to be correct.
 """
@@ -281,11 +322,6 @@ Let's discuss. Does this model tell us anything at all? Is this model useful for
 Beginning with simple insights, this model does tell us something. Judging by the results table produced by our model, the x term (Elo Difference) has a significance level of 0.0204. Using an alpha level of 0.05, this term is significant - meaning there _is_ a relationship between the predictor and the outcome. In the context of our model, this means that there is a presence of a positive relationship between Elo Difference and Score Difference (i.e. as Elo Difference increases, Score Difference increases as well).
 
 Despite these insights, this model will not be useful for any sort of score prediction. Looking at the graphic, we can immediately see the extreme variability in this scatterplot. While there is presence of a trend, there are simply too many factors that go into which team wins an NFL game to find use out of a linear, one predictor model. This is further backed up by the low R^2 value of roughly .03 - this tells us mathematically that our data is too variable for the model.
-"""
-
-# ╔═╡ 6f9e1d3e-ffb9-4241-ab99-cc9175a85a3b
-md"""
-Test
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -1794,14 +1830,19 @@ version = "1.4.1+0"
 # ╟─ffd40a12-ff4d-4ad3-9b50-6e268af94cfc
 # ╟─b57bd3e8-744b-44d4-bd76-5b9574161113
 # ╟─e0ccc112-4200-4a12-bc87-1ea8dbfc87c6
-# ╟─85cfb5bd-1d76-42af-a444-343c7d47f3a1
 # ╟─54ed64b3-243f-460a-a291-9ca411123736
 # ╟─da25db7f-d50e-4ef7-96ea-d5aaff48eb1d
-# ╟─8908d678-2df5-4d36-90e1-f0a8da3037ea
-# ╟─204e6e56-4b8b-445f-a9fb-838eb8bde72e
+# ╟─762e5468-1648-4d53-9368-e79c7800cac9
+# ╟─17062faf-a352-4de9-9e33-d201ac8cfc03
+# ╟─6198a92b-4dbf-4d60-9000-94f741fc7f96
+# ╟─7b960ab5-c2ab-48d6-bde3-7044f5f520e8
+# ╟─c1d023c8-a6bd-46dd-a62f-f64468845a74
+# ╟─5bb38a20-0fe9-49e1-a2e8-299a356323bd
+# ╟─17eea68b-7966-4c40-8c28-c1fd9d1f55cf
+# ╟─efd8b506-b761-48d5-8a10-282a3f47e97a
 # ╟─4b2b242e-f63e-439b-b839-d97459be1130
 # ╟─f9c80827-34ee-4893-9580-d23900acfa74
-# ╟─456dd862-acfd-46d3-9ff0-3bff3e1854e1
+# ╟─1f615f62-4b47-41f2-88da-90de3aca5020
 # ╟─f4e52294-843e-469b-93f3-c462a4f6fcb3
 # ╟─6e155cf2-fc49-4c4f-8dc1-1d2900a5e796
 # ╟─a51ce0ee-f9ca-40cb-b9d9-dd62bded47dd
@@ -1830,6 +1871,5 @@ version = "1.4.1+0"
 # ╟─c439a599-cf45-4691-9020-34962ffa6b4f
 # ╟─0cfce2c0-1107-4176-a50d-2943141374c4
 # ╟─fd3d5046-3b7f-4d69-9eaf-867fa2ced3c4
-# ╟─6f9e1d3e-ffb9-4241-ab99-cc9175a85a3b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
