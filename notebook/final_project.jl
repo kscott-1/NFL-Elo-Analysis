@@ -73,7 +73,7 @@ There are 32 teams currently playing in the NFL. Use the dropdown menu below to 
 # ╔═╡ da25db7f-d50e-4ef7-96ea-d5aaff48eb1d
 @bind team Select(sort(unique(elo.team1)))
 
-# ╔═╡ 762e5468-1648-4d53-9368-e79c7800cac9
+# ╔═╡ 17062faf-a352-4de9-9e33-d201ac8cfc03
 begin
 	function one_team_df(elo::DataFrame, team::String)::DataFrame
 		tmp1 = subset(elo, :team1 => ByRow(==(team)))
@@ -102,11 +102,8 @@ begin
 		return team_select_elo
 	end;
 
-	team_select_elo = one_team_df(elo, string(team))
-end;
-
-# ╔═╡ 17062faf-a352-4de9-9e33-d201ac8cfc03
-begin
+	team_select_elo = one_team_df(elo, string(team));
+	
 	function elo_plot(df::DataFrame, team::InlineString)
 		Plots.plot(df.game_num, df.team_elo, xticks = ([1:1:17;]), xlims = [0, 18], linewidth = 3, label = "$team", title = "2022 Elo History for $team", xlab = "Game Number", ylab = "Elo Rating", legend = false)
 		Plots.scatter!(df.game_num, df.team_elo, label = false, color = :black, ms = 3)
@@ -232,7 +229,7 @@ Now that we have our plot, is there any obvious break to be found here? It appea
 
 Thusfar in 2022, it seems that if the Elo difference is greater than 40, the rate at which the Higher Elo team actually wins increases. At lower Elo difference levels, the prediction given by Elo is significantly less accurate. In fact, with a difference of 40 Elo or less, the Lower Elo team wins the game more often than not.
 
-This isn't incredibly surprising - This confirms the logical notion more lopsided matchups are less likely to produce an unexpected outcome.
+This isn't incredibly surprising - This confirms the logical notion that more lopsided matchups are less likely to produce an unexpected outcome.
 """
 
 # ╔═╡ 71add011-81c3-4c53-9d1d-f07107b12329
@@ -1832,7 +1829,6 @@ version = "1.4.1+0"
 # ╟─e0ccc112-4200-4a12-bc87-1ea8dbfc87c6
 # ╟─54ed64b3-243f-460a-a291-9ca411123736
 # ╟─da25db7f-d50e-4ef7-96ea-d5aaff48eb1d
-# ╟─762e5468-1648-4d53-9368-e79c7800cac9
 # ╟─17062faf-a352-4de9-9e33-d201ac8cfc03
 # ╟─6198a92b-4dbf-4d60-9000-94f741fc7f96
 # ╟─7b960ab5-c2ab-48d6-bde3-7044f5f520e8
