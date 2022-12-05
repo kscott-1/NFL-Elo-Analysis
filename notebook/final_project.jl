@@ -29,9 +29,6 @@ begin
 	"""
 end
 
-# ╔═╡ 7095919e-0bb9-4694-9001-ee99f9ceaa66
-
-
 # ╔═╡ fcba6dff-0cf0-4ae7-afd8-2a0e02785766
 md"""
 Within this project, our goal is to use Julia to enhance our skills with the language and to use its advantages to the fullest. The Pluto Notebook offers an extreme amount of functionality using the Julia language. For one, the notebook is completely dynamic - meaning that any change made to a variable or piece of data will automatically update any code impacted by that change. This opens up many doors to use html sliders and selections to filter data and look at graphics the exact way that the user wants to. In addition, Julia is compiled with 'Just-in-Time' or JIT. Due to this, Julia is extremely fast at updating variables throughout a dynamic Pluto notebook, allowing for a great deal of user functionality.
@@ -44,36 +41,13 @@ We hope to be able to explore the functionality of Pluto, while using various th
 
 # ╔═╡ e5f3843b-1b06-429a-a0d8-c024f8d42b77
 md"""
-### The Data
+### The Complete Data
 """
 
 # ╔═╡ 40f94e2a-f8e9-431d-84e0-21966d99f00c
 elo = CSV.File("nfl_elo_latest.csv") |> DataFrame
 
 # ╔═╡ ffd40a12-ff4d-4ad3-9b50-6e268af94cfc
-
-
-# ╔═╡ b57bd3e8-744b-44d4-bd76-5b9574161113
-md"""
-### Interactive Features of Julia & Data Exploration
-"""
-
-# ╔═╡ e0ccc112-4200-4a12-bc87-1ea8dbfc87c6
-md"""
-As discussed previously, a piece of this project is designed specifically to explore the interactive features of Julia. Within this dataset from FiveThirtyEight, there is extensive data on elo and predictions.
-
-To start, let's look at the Elo History for NFL teams across 2022 thusfar.
-"""
-
-# ╔═╡ 54ed64b3-243f-460a-a291-9ca411123736
-md"""
-There are 32 teams currently playing in the NFL. Use the dropdown menu below to select the team you are interested in and watch the graphic change to fit that team.
-"""
-
-# ╔═╡ da25db7f-d50e-4ef7-96ea-d5aaff48eb1d
-@bind team Select(sort(unique(elo.team1)))
-
-# ╔═╡ 17062faf-a352-4de9-9e33-d201ac8cfc03
 begin
 	function one_team_df(elo::DataFrame, team::String)::DataFrame
 		tmp1 = subset(elo, :team1 => ByRow(==(team)))
@@ -101,9 +75,53 @@ begin
 		
 		return team_select_elo
 	end;
+end;
 
+# ╔═╡ b57bd3e8-744b-44d4-bd76-5b9574161113
+md"""
+### Interactive Features of Julia & Data Exploration
+"""
+
+# ╔═╡ e0ccc112-4200-4a12-bc87-1ea8dbfc87c6
+md"""
+As discussed previously, a piece of this project is designed specifically to explore the interactive features of Julia. Within this dataset from FiveThirtyEight, there is extensive data on elo and predictions.
+
+To start, let's look at the Elo History for NFL teams across 2022 thusfar.
+"""
+
+# ╔═╡ 54ed64b3-243f-460a-a291-9ca411123736
+md"""
+There are 32 teams currently playing in the NFL. Use the dropdown menu below to select the team you are interested in and watch the graphic change to fit that team.
+"""
+
+# ╔═╡ da25db7f-d50e-4ef7-96ea-d5aaff48eb1d
+@bind team Select(sort(unique(elo.team1)))
+
+# ╔═╡ ea1b3eea-79b2-400d-bc61-1a28aba72930
+md"""
+###### Filtered Data by Team
+"""
+
+# ╔═╡ 0248124e-9f1c-4314-8e0d-e7be961a94b0
+begin
 	team_select_elo = one_team_df(elo, string(team));
-	
+end
+
+# ╔═╡ dd08d40a-5b68-4329-940d-23964016bad8
+
+
+# ╔═╡ ba7ef8ae-88d1-4bca-b0bd-5a7dacb351e4
+md"""
+###### Elo Plots
+"""
+
+# ╔═╡ 9ef54894-0983-4811-bcaa-14fa998f4a6c
+md"""
+Using the data filtered by team, we can run a few functions to graph a few interesting things. To start, let's look at the Elo History for 2022 and plot it below. This allows us to see the trend of performance by each team throughout the year. Higher Elo is better!
+"""
+
+# ╔═╡ 17062faf-a352-4de9-9e33-d201ac8cfc03
+begin
 	function elo_plot(df::DataFrame, team::InlineString)
 		Plots.plot(df.game_num, df.team_elo, xticks = ([1:1:17;]), xlims = [0, 18], linewidth = 3, label = "$team", title = "2022 Elo History for $team", xlab = "Game Number", ylab = "Elo Rating", legend = false)
 		Plots.scatter!(df.game_num, df.team_elo, label = false, color = :black, ms = 3)
@@ -111,12 +129,9 @@ begin
 	elo_plot(team_select_elo, team)
 end
 
-# ╔═╡ 6198a92b-4dbf-4d60-9000-94f741fc7f96
-
-
 # ╔═╡ 7b960ab5-c2ab-48d6-bde3-7044f5f520e8
 md"""
-Now that a team has been selected, let's take it a step further and select a second team to compare the Elo History between two teams.
+Now that a team has been selected and we have viewed it's Elo History, let's take it a step further and select a second team to compare the Elo History between two teams.
 """
 
 # ╔═╡ c1d023c8-a6bd-46dd-a62f-f64468845a74
@@ -136,8 +151,13 @@ begin
 	elo_plot(team_select_elo, team2_select_elo, team, team2)
 end
 
-# ╔═╡ 17eea68b-7966-4c40-8c28-c1fd9d1f55cf
+# ╔═╡ 66750854-6438-4dbe-8d1c-7004ce2b04d9
 
+
+# ╔═╡ c3cc0c04-b412-43bf-9745-400947d5d6dc
+md"""
+###### Game Importance
+"""
 
 # ╔═╡ efd8b506-b761-48d5-8a10-282a3f47e97a
 md"""
@@ -199,12 +219,10 @@ begin
 
 	# create var for whether or not Elo prediction was correct
 	col_rightwrong = ifelse.(score_diff .> 0, "Higher Elo Won", "Lower Elo Won");
-end;
-
-# ╔═╡ 9ff0ed74-3423-40c1-8d4b-1f2fd899ca88
-md"""
-Statistically speaking, a random guess for each game in the NFL would produce a 50% accuracy rate. Let's look into whether the Elo system beats that 50% mark!
-"""
+	md"""
+	Statistically speaking, a random guess for each game in the NFL would produce a 50% accuracy rate. Let's look into whether the Elo system beats that 50% mark!
+	"""
+end
 
 # ╔═╡ a24f8ef7-7e27-43ca-9456-d33c20dadb6a
 count = countmap(col_rightwrong)
@@ -214,11 +232,8 @@ print("FiveThirtyEight Elo Prediction Accuracy for 2022: ", round(collect(values
 
 # ╔═╡ 149a4880-5c77-48c0-ac87-78481ef5bfca
 md"""
-We can see that the current accuracy for 2022 hits nearly 60%. While a higher number than 50%, is this actually a good result? To answer this question, let's first look at a graphic of these results for insights.
+We can see that the current accuracy for 2022 hangs around 60%. While a higher number than 50%, is this actually a good result? To answer this question, let's first look at a graphic of these results for insights.
 """
-
-# ╔═╡ 84bae930-6e12-4e1d-932b-e9fc9b8b4f69
-
 
 # ╔═╡ 1826c6cc-38ae-4478-bb88-8d92ca68ddc0
 Plots.histogram(elo_diff, bins = 16, group = col_rightwrong, title = "At What Elo Difference are Predictions More Accurate?", xlab = "Positive Difference in Elo in Each Game", ylab = "Occurances in 2022",  color_palette = [:green, :red], legendfontsize = 7, titlefontsize = 12, xguidefontsize = 10, yguidefontsize = 10, legend = :right, alpha = 0.5)
@@ -271,7 +286,7 @@ lr_df = DataFrame(y = score_diff, x = elo_diff);
 
 # ╔═╡ 9deed019-0fb0-4578-92a7-b764f04c14d8
 md"""
-##### Create the Model
+###### Create the Model
 """
 
 # ╔═╡ a6acc375-9bf7-41d5-979b-178c2a4c9c6c
@@ -299,7 +314,7 @@ md"""
 # ╔═╡ b41e8471-ba0c-407e-af57-efe22dda635f
 r2(scorediff_model)
 
-# ╔═╡ d3dc0b7a-c3b8-481d-849e-d27b212aff99
+# ╔═╡ e071dae3-ee13-4fb9-816e-6cdc250a6c0d
 
 
 # ╔═╡ c439a599-cf45-4691-9020-34962ffa6b4f
@@ -309,16 +324,26 @@ begin
 	plot!(elo_diff, predict(scorediff_model, DataFrame(x = elo_diff)), color = :black, linewidth = 4, legend = false)
 end
 
-# ╔═╡ 0cfce2c0-1107-4176-a50d-2943141374c4
-
-
 # ╔═╡ fd3d5046-3b7f-4d69-9eaf-867fa2ced3c4
 md"""
 Let's discuss. Does this model tell us anything at all? Is this model useful for predictions?
 
-Beginning with simple insights, this model does tell us something. Judging by the results table produced by our model, the x term (Elo Difference) has a significance level of 0.0204. Using an alpha level of 0.05, this term is significant - meaning there _is_ a relationship between the predictor and the outcome. In the context of our model, this means that there is a presence of a positive relationship between Elo Difference and Score Difference (i.e. as Elo Difference increases, Score Difference increases as well).
+Beginning with simple insights, this model does tell us something. Judging by the results table produced by our model, the x term (Elo Difference) has a significance level of 0.0231. Using an alpha level of 0.05, this term is significant - meaning there _is_ a relationship between the predictor and the outcome. In the context of our model, this means that there is a presence of a positive relationship between Elo Difference and Score Difference (i.e. as Elo Difference increases, Score Difference increases as well).
 
 Despite these insights, this model will not be useful for any sort of score prediction. Looking at the graphic, we can immediately see the extreme variability in this scatterplot. While there is presence of a trend, there are simply too many factors that go into which team wins an NFL game to find use out of a linear, one predictor model. This is further backed up by the low R^2 value of roughly .03 - this tells us mathematically that our data is too variable for the model.
+"""
+
+# ╔═╡ 1b71d15a-d5d2-4481-99cf-b4ba81069172
+
+
+# ╔═╡ ed408954-4553-4f3f-b61e-8fd690e5a2d6
+md"""
+### Conclusion
+"""
+
+# ╔═╡ b8f809cd-2db9-4c19-9b3f-0404625c0421
+md"""
+In the end, Elo seems to be a good indicator of overall team strength. The good teams have high Elo and the bad teams have low Elo (as is the intention). Despite these, the predictions provided by Elo ratings are hard to trust as a prediction tool. The predictions may give a slight edge over guessing, but there is too much variability for a confident and precise prediction, especially when attempting to predict the point spread.
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -1819,7 +1844,6 @@ version = "1.4.1+0"
 
 # ╔═╡ Cell order:
 # ╟─18ff7946-d48a-4431-bfb5-2fc039bdabe4
-# ╟─7095919e-0bb9-4694-9001-ee99f9ceaa66
 # ╟─fcba6dff-0cf0-4ae7-afd8-2a0e02785766
 # ╟─27851324-a2db-46a7-98b7-ea51935932ee
 # ╟─e5f3843b-1b06-429a-a0d8-c024f8d42b77
@@ -1829,12 +1853,17 @@ version = "1.4.1+0"
 # ╟─e0ccc112-4200-4a12-bc87-1ea8dbfc87c6
 # ╟─54ed64b3-243f-460a-a291-9ca411123736
 # ╟─da25db7f-d50e-4ef7-96ea-d5aaff48eb1d
+# ╟─ea1b3eea-79b2-400d-bc61-1a28aba72930
+# ╟─0248124e-9f1c-4314-8e0d-e7be961a94b0
+# ╟─dd08d40a-5b68-4329-940d-23964016bad8
+# ╟─ba7ef8ae-88d1-4bca-b0bd-5a7dacb351e4
+# ╟─9ef54894-0983-4811-bcaa-14fa998f4a6c
 # ╟─17062faf-a352-4de9-9e33-d201ac8cfc03
-# ╟─6198a92b-4dbf-4d60-9000-94f741fc7f96
 # ╟─7b960ab5-c2ab-48d6-bde3-7044f5f520e8
 # ╟─c1d023c8-a6bd-46dd-a62f-f64468845a74
 # ╟─5bb38a20-0fe9-49e1-a2e8-299a356323bd
-# ╟─17eea68b-7966-4c40-8c28-c1fd9d1f55cf
+# ╟─66750854-6438-4dbe-8d1c-7004ce2b04d9
+# ╟─c3cc0c04-b412-43bf-9745-400947d5d6dc
 # ╟─efd8b506-b761-48d5-8a10-282a3f47e97a
 # ╟─4b2b242e-f63e-439b-b839-d97459be1130
 # ╟─f9c80827-34ee-4893-9580-d23900acfa74
@@ -1842,11 +1871,9 @@ version = "1.4.1+0"
 # ╟─f4e52294-843e-469b-93f3-c462a4f6fcb3
 # ╟─6e155cf2-fc49-4c4f-8dc1-1d2900a5e796
 # ╟─a51ce0ee-f9ca-40cb-b9d9-dd62bded47dd
-# ╟─9ff0ed74-3423-40c1-8d4b-1f2fd899ca88
 # ╟─a24f8ef7-7e27-43ca-9456-d33c20dadb6a
 # ╟─999044f1-b878-4c3b-829c-fc27f440313c
 # ╟─149a4880-5c77-48c0-ac87-78481ef5bfca
-# ╟─84bae930-6e12-4e1d-932b-e9fc9b8b4f69
 # ╟─1826c6cc-38ae-4478-bb88-8d92ca68ddc0
 # ╟─f1891596-2628-4ab6-92a1-374f56259123
 # ╟─71add011-81c3-4c53-9d1d-f07107b12329
@@ -1863,9 +1890,11 @@ version = "1.4.1+0"
 # ╟─1e35bfde-7ea2-4136-9f68-33122ee9b161
 # ╟─8e71f4cb-64eb-4b5f-8f63-ef61fb46386a
 # ╟─b41e8471-ba0c-407e-af57-efe22dda635f
-# ╟─d3dc0b7a-c3b8-481d-849e-d27b212aff99
+# ╟─e071dae3-ee13-4fb9-816e-6cdc250a6c0d
 # ╟─c439a599-cf45-4691-9020-34962ffa6b4f
-# ╟─0cfce2c0-1107-4176-a50d-2943141374c4
 # ╟─fd3d5046-3b7f-4d69-9eaf-867fa2ced3c4
+# ╟─1b71d15a-d5d2-4481-99cf-b4ba81069172
+# ╟─ed408954-4553-4f3f-b61e-8fd690e5a2d6
+# ╟─b8f809cd-2db9-4c19-9b3f-0404625c0421
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
