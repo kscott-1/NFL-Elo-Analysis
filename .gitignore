@@ -23,5 +23,8 @@
 # Unignore Directories
 !**/
 
+# Unignore .gitattributes
+!.gitattributes
+
 # Unignore .gitignore
 !.gitignore
