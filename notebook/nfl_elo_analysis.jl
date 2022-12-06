@@ -21,19 +21,15 @@ begin
 	plotly()
 
 	md"""
-	# Team 4 - 2022 NFL Game Data
+	# NFL Elo Analysis
 	
 	##### Source: FiveThirtyEight https://github.com/fivethirtyeight/data/tree/master/nfl-elo
-
-	###### Kyle Scott, Nadine Rose, Ari Spraggins
 	"""
 end
 
 # ╔═╡ fcba6dff-0cf0-4ae7-afd8-2a0e02785766
 md"""
-Within this project, our goal is to use Julia to enhance our skills with the language and to use its advantages to the fullest. The Pluto Notebook offers an extreme amount of functionality using the Julia language. For one, the notebook is completely dynamic - meaning that any change made to a variable or piece of data will automatically update any code impacted by that change. This opens up many doors to use html sliders and selections to filter data and look at graphics the exact way that the user wants to. In addition, Julia is compiled with 'Just-in-Time' or JIT. Due to this, Julia is extremely fast at updating variables throughout a dynamic Pluto notebook, allowing for a great deal of user functionality.
-
-We hope to be able to explore the functionality of Pluto, while using various things we have learned about Julia. This can include creating functions that use multiple dispatch and creating data types.
+Within this project, the goal is to use Julia to enhance skills with the language and to use its advantages to the fullest. The Pluto Notebook offers an extreme amount of functionality using the Julia language. For one, the notebook is completely dynamic - meaning that any change made to a variable or piece of data will automatically update any code impacted by that change. This opens up many doors to use html sliders and selections to filter data and look at graphics the exact way that the user wants to. In addition, Julia is compiled with 'Just-in-Time' or JIT. Due to this, Julia is extremely fast at updating variables throughout a dynamic Pluto notebook, allowing for a great deal of user functionality.
 """
 
 # ╔═╡ 27851324-a2db-46a7-98b7-ea51935932ee
