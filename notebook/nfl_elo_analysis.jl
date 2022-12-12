@@ -232,7 +232,7 @@ We can see that the current accuracy for 2022 hangs around 60%. While a higher n
 """
 
 # ╔═╡ 1826c6cc-38ae-4478-bb88-8d92ca68ddc0
-Plots.histogram(elo_diff, bins = 16, group = col_rightwrong, title = "At What Elo Difference are Predictions More Accurate?", xlab = "Positive Difference in Elo in Each Game", ylab = "Occurances in 2022",  color_palette = [:green, :red], legendfontsize = 7, titlefontsize = 12, xguidefontsize = 10, yguidefontsize = 10, legend = :right, alpha = 0.5)
+Plots.histogram(elo_diff, bins = 18, group = col_rightwrong, title = "At What Elo Difference are Predictions More Accurate?", xlab = "Positive Difference in Elo in Each Game", ylab = "Occurances in 2022",  color_palette = [:green, :red], legendfontsize = 7, titlefontsize = 12, xguidefontsize = 10, yguidefontsize = 10, legend = :right, alpha = 0.5)
 
 # ╔═╡ f1891596-2628-4ab6-92a1-374f56259123
 md"""
@@ -324,9 +324,9 @@ end
 md"""
 Let's discuss. Does this model tell us anything at all? Is this model useful for predictions?
 
-Beginning with simple insights, this model does tell us something. Judging by the results table produced by our model, the x term (Elo Difference) has a significance level of 0.0231. Using an alpha level of 0.05, this term is significant - meaning there _is_ a relationship between the predictor and the outcome. In the context of our model, this means that there is a presence of a positive relationship between Elo Difference and Score Difference (i.e. as Elo Difference increases, Score Difference increases as well).
+Beginning with simple insights, this model does tell us something. Judging by the results table produced by our model, the x term (Elo Difference) has a significance level of 0.0261. Using an alpha level of 0.05, this term is significant - meaning there _is_ a relationship between the predictor and the outcome. In the context of our model, this means that there is a presence of a positive relationship between Elo Difference and Score Difference (i.e. as Elo Difference increases, Score Difference increases as well).
 
-Despite these insights, this model will not be useful for any sort of score prediction. Looking at the graphic, we can immediately see the extreme variability in this scatterplot. While there is presence of a trend, there are simply too many factors that go into which team wins an NFL game to find use out of a linear, one predictor model. This is further backed up by the low R^2 value of roughly .03 - this tells us mathematically that our data is too variable for the model.
+Despite these insights, this model will not be useful for any sort of score prediction. Looking at the graphic, we can immediately see the extreme variability in this scatterplot. While there is presence of a trend, there are simply too many factors that go into which team wins an NFL game to find use out of a linear, one predictor model. This is further backed up by the low R^2 value of roughly .024 - this tells us mathematically that our data is too variable for the model.
 """
 
 # ╔═╡ 1b71d15a-d5d2-4481-99cf-b4ba81069172
