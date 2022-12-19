@@ -232,30 +232,30 @@ We can see that the current accuracy for 2022 hangs around 60%. While a higher n
 """
 
 # ╔═╡ 1826c6cc-38ae-4478-bb88-8d92ca68ddc0
-Plots.histogram(elo_diff, bins = 18, group = col_rightwrong, title = "At What Elo Difference are Predictions More Accurate?", xlab = "Positive Difference in Elo in Each Game", ylab = "Occurances in 2022",  color_palette = [:green, :red], legendfontsize = 7, titlefontsize = 12, xguidefontsize = 10, yguidefontsize = 10, legend = :right, alpha = 0.5)
+Plots.histogram(elo_diff, group = col_rightwrong, title = "At What Elo Difference are Predictions More Accurate?", xlab = "Positive Difference in Elo in Each Game", ylab = "Occurances in 2022",  color_palette = [:green, :red], legendfontsize = 7, titlefontsize = 12, xguidefontsize = 10, yguidefontsize = 10, legend = :right, alpha = 0.5)
 
 # ╔═╡ f1891596-2628-4ab6-92a1-374f56259123
 md"""
 Now that we have our plot, is there any obvious break to be found here? It appears so.
 
-Thusfar in 2022, it seems that if the Elo difference is greater than 40, the rate at which the Higher Elo team actually wins increases. At lower Elo difference levels, the prediction given by Elo is significantly less accurate. In fact, with a difference of 40 Elo or less, the Lower Elo team wins the game more often than not.
+Thusfar in 2022, it seems that if the Elo difference is greater than 50, the rate at which the Higher Elo team actually wins increases. At lower Elo difference levels, the prediction given by Elo is significantly less accurate. In fact, with a difference of 50 Elo or less, the Lower Elo team wins the game more often than not.
 
 This isn't incredibly surprising - This confirms the logical notion that more lopsided matchups are less likely to produce an unexpected outcome.
 """
 
 # ╔═╡ 71add011-81c3-4c53-9d1d-f07107b12329
 begin
-	gt_40 = DataFrame(elo_diff = elo_diff, col_rightwrong = col_rightwrong) |> @filter(_.elo_diff > 40) |> DataFrame;
+	gt_50 = DataFrame(elo_diff = elo_diff, col_rightwrong = col_rightwrong) |> @filter(_.elo_diff > 50) |> DataFrame;
 	md"""
-	Let's take a look at what the predictions are when we ignore any of those datapoints where the Elo Difference is less than 40:
+	Let's take a look at what the predictions are when we ignore any of those datapoints where the Elo Difference is less than 50:
 	"""
 end
 
 # ╔═╡ 2356cdcc-8e21-4a32-8b17-119359a8cbfb
-gt_count = countmap(gt_40.col_rightwrong)
+gt_count = countmap(gt_50.col_rightwrong)
 
 # ╔═╡ be40ac7f-9265-42ba-9f1b-a0d45f367ec3
-print("Prediction Accuracy (Elo Diff > 40): ", round(collect(values(gt_count))[2]/length(gt_40.col_rightwrong)*100, digits = 3), "%")
+print("Prediction Accuracy (Elo Diff > 50): ", round(collect(values(gt_count))[2]/length(gt_50.col_rightwrong)*100, digits = 3), "%")
 
 # ╔═╡ 30e56e37-6236-4c7d-9644-75917394f6c5
 md"""
@@ -324,9 +324,9 @@ end
 md"""
 Let's discuss. Does this model tell us anything at all? Is this model useful for predictions?
 
-Beginning with simple insights, this model does tell us something. Judging by the results table produced by our model, the x term (Elo Difference) has a significance level of 0.0261. Using an alpha level of 0.05, this term is significant - meaning there _is_ a relationship between the predictor and the outcome. In the context of our model, this means that there is a presence of a positive relationship between Elo Difference and Score Difference (i.e. as Elo Difference increases, Score Difference increases as well).
+Beginning with simple insights, this model does tell us something. Judging by the results table produced by our model, the x term (Elo Difference) has a significance level of 0.0339. Using an alpha level of 0.05, this term is significant - meaning there _is_ a relationship between the predictor and the outcome. In the context of our model, this means that there is a presence of a positive relationship between Elo Difference and Score Difference (i.e. as Elo Difference increases, Score Difference increases as well).
 
-Despite these insights, this model will not be useful for any sort of score prediction. Looking at the graphic, we can immediately see the extreme variability in this scatterplot. While there is presence of a trend, there are simply too many factors that go into which team wins an NFL game to find use out of a linear, one predictor model. This is further backed up by the low R^2 value of roughly .024 - this tells us mathematically that our data is too variable for the model.
+Despite these insights, this model will not be useful for any sort of score prediction. Looking at the graphic, we can immediately see the extreme variability in this scatterplot. While there is presence of a trend, there are simply too many factors that go into which team wins an NFL game to find use out of a linear, one predictor model. This is further backed up by the low R^2 value of roughly .02 - this tells us mathematically that our data is too variable for the model.
 """
 
 # ╔═╡ 1b71d15a-d5d2-4481-99cf-b4ba81069172
@@ -771,9 +771,9 @@ version = "0.21.0+0"
 
 [[deps.Glib_jll]]
 deps = ["Artifacts", "Gettext_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Libiconv_jll", "Libmount_jll", "PCRE2_jll", "Pkg", "Zlib_jll"]
-git-tree-sha1 = "fb83fbe02fe57f2c068013aa94bcdf6760d3a7a7"
+git-tree-sha1 = "d3b3624125c1474292d0d8ed0f65554ac37ddb23"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
-version = "2.74.0+1"
+version = "2.74.0+2"
 
 [[deps.Graphite2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -977,9 +977,9 @@ version = "1.42.0+0"
 
 [[deps.Libiconv_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "42b62845d70a619f063a7da093d995ec8e15e778"
+git-tree-sha1 = "c7cb1f5d892775ba13767a87c7ada0b980ea0a71"
 uuid = "94ce4f54-9a6c-5748-9c1c-f9c7231a4531"
-version = "1.16.1+1"
+version = "1.16.1+2"
 
 [[deps.Libmount_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1870,7 +1870,7 @@ version = "1.4.1+0"
 # ╟─a24f8ef7-7e27-43ca-9456-d33c20dadb6a
 # ╟─999044f1-b878-4c3b-829c-fc27f440313c
 # ╟─149a4880-5c77-48c0-ac87-78481ef5bfca
-# ╟─1826c6cc-38ae-4478-bb88-8d92ca68ddc0
+# ╠═1826c6cc-38ae-4478-bb88-8d92ca68ddc0
 # ╟─f1891596-2628-4ab6-92a1-374f56259123
 # ╟─71add011-81c3-4c53-9d1d-f07107b12329
 # ╟─2356cdcc-8e21-4a32-8b17-119359a8cbfb
